@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.5.1/dist/chart.min.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery.min.js"></script>
+    <script src="https://markjivko.com/dist/recorder.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Include the Recorder library from a CDN -->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js'></script>
+</head>
+
+<body>
+    <div class="prediction-container">
+        <!-- Header section -->
+        <div class="header">
+            <div class="logo">
+                Emo<span>Detect</span>
+            </div>
+            <ul>
+                <li><a href="{{ url_for('home') }}">About</a></li>
+                <li><a href="{{ url_for('prediction') }}">Demo</a></li>
+                <li><a href="#" class="loginbtn">Login</a></li>
+            </ul>
+        </div>
+
+        <div class="main-container">
+
+            <div class="input-section">
+
+                <h1>Record or Upload Audio Here!</h1>
+                <div class="user-inputs">
+                    <!-- record section -->
+                    <div class="holder">
+                        <button id="button" class="icons"><i class="icon fas fa-microphone"></i></button>
+                    </div>
+
+                    <!-- upload section -->
+                    <div class="form-container">
+                        <form class="" action="/predict" , method="post" enctype="multipart/form-data">
+                            <div class="choosefile-btns">
+                                <div><label class="choosefile" id="c1">Choose speech file<input type="file"
+                                            accept="audio/*" name="audfile" capture id="recorder" /></label> Preview
+                                    file <audio id="player" controls></audio></div>
+                                <div><label class="choosefile" id="c2">Choose heartrate file<input type="file"
+                                            accept="audio/*" name="heartfile" capture id="recorder" /></label> Preview
+                                    file <audio id="heartrateplayer" controls></audio></div>
+                            </div>
+                            <div class="main-btn">
+                                <button type="submit" id="predictButton" class="btn">Predict Emotion</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- output-section -->
+            <div class="output-section">
+                <div class="output-graphs">
+                    <div class="graphs">
+                        <p>Speech audio results</p>
+                        <div class="graph"><canvas id='speechAudioChart'></div>
+                        </canvas>
+                    </div>
+
+                    <div class="vl"></div>
+
+                    <div class="graphs">
+                        <p>Heartrate audio results</p>
+                        <div class="graph"><canvas id='heartRateChart'></div>
+                        </canvas>
+                    </div>
+                </div>
+
+                <div class="emotion-output">
+
+                    {%if prediction%}
+
+                    <div>
+                        <h2 class="final-result">Speech Emotion : {{prediction}}</h2>
+                    </div>
+                    <div>
+                        <h2 class="final-result">Heart Emotion : {{hprediction}}</h2>
+                    </div>
+                    {%endif%}
+                </div>
+            </div>
+
+        </div>
+        <!-- Footer section -->
+        <div class="footer">
+            <div>
+                <i class="fa-brands fa-facebook contact-icon"></i>
+            </div>
+            <div>
+                <i class="fa-brands fa-twitter contact-icon"></i>
+            </div>
+            <div>
+                <i class="fa-brands fa-instagram contact-icon"></i>
+            </div>
+            <div>
+                <i class="fa-brands fa-github contact-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <!--Code for charts-->
+    {% if prediction %}
+        <script>
+            let myChart = document.getElementById('speechAudioChart').getContext('2d')
+            let myChart1 = document.getElementById('heartRateChart').getContext('2d')
+            let ProbChart = new Chart(myChart, {
+                type: 'bar',
+                data: {
+                    labels: ["Angry", "Sad", "Neutral", "Happy"],
+                    datasets: [{
+                        label: 'Probability %',
+                        data: ['{{prob[0]}}', '{{prob[1]}}', '{{prob[2]}}', '{{prob[3]}}'],
+                        backgroundColor: ['lightpink', 'yellow', 'lightgreen', 'lightblue'],
+                        borderWidth: 1,
+                        boederColor: 'gray',
+                        hoverBorderWidth: 1,
+                        hoverBorderColor: 'gray',
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                stepSize: 5,
+                            }
+                        }
+                    }
+                }
+            })
+
+            let ProbChart1 = new Chart(myChart1, {
+                type: 'bar',
+                data: {
+                    labels: ["Angry", "Sad", "Neutral", "Happy"],
+                    datasets: [{
+                        label: 'Probability %',
+                        data: ['{{hprob[0]}}', '{{hprob[1]}}', '{{hprob[2]}}', '{{hprob[3]}}'],
+                        backgroundColor: ['lightpink', 'yellow', 'lightgreen', 'lightblue'],
+                        borderWidth: 1,
+                        boederColor: 'gray',
+                        hoverBorderWidth: 1,
+                        hoverBorderColor: 'gray',
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            min: 0,
+                            max: 100,
+                            ticks: {
+                                stepSize: 5,
+                            }
+                        }
+                    }
+                }
+            })
+        </script>
+        {% endif %}
+    
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const speechFileInput = document.querySelector("#c1 input[type=file]");
+            const heartRateFileInput = document.querySelector("#c2 input[type=file]");
+            const speechPreview = document.getElementById("player");
+            const heartRatePreview = document.getElementById("heartrateplayer");
+
+            speechFileInput.addEventListener("change", function () {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        speechPreview.src = e.target.result;
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    speechPreview.src = "";
+                }
+            });
+
+            heartRateFileInput.addEventListener("change", function () {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        heartRatePreview.src = e.target.result;
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    heartRatePreview.src = "";
+                }
+            });
+        });
+    </script>
+
+    <!--Record button function-->
+    <script>
+        $(document).ready(function () {
+            // When the record audio button is clicked
+            $("#button").click(function () {
+                alert("Audio recording started!");
+                // Send a POST request to Flask to initiate audio recording
+                $.post("/record_audio", function (data, status) {
+                    alert("Audio recording completed!");
+                });
+            });
+        });
+    </script>
+    <script>
+        function predictEmotion() {
+            var fileInput = document.getElementById('audfile');
+            var file = fileInput.files[0];
+
+            var formData = new FormData();
+            formData.append('audfile', file);
+
+            $.ajax({
+                url: '/predict',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    // Handle the response from the server
+                    console.log(response);
+                    alert('Prediction successful! Result: ' + response);
+                },
+                error: function (error) {
+                    // Handle any errors that occurred during the request
+                    console.error(error);
+                }
+            });
+        }
+    </script>
+    <script>
+        let myChart = document.getElementById('speechAudioChart').getContext('2d')
+        let myChart1 = document.getElementById('heartRateChart').getContext('2d')
+        let ProbChart = new Chart(myChart, {
+            type: 'bar',
+            data: {
+                labels: ["Angry", "Sad", "Neutral", "Happy"],
+                datasets: [{
+                    label: 'Probability %',
+                    data: [0, 0, 0, 0],
+                    // data : '{{prob}}',
+                    backgroundColor: ['lightpink', 'yellow', 'lightgreen', 'lightblue'],
+                    borderWidth: 1,
+                    boederColor: 'gray',
+                    hoverBorderWidth: 1,
+                    hoverBorderColor: 'gray',
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            stepSize: 5,
+                        }
+                    }
+                }
+            }
+        })
+        let ProbChart1 = new Chart(myChart1, {
+            type: 'bar',
+            data: {
+                labels: ["Angry", "Sad", "Neutral", "Happy"],
+                datasets: [{
+                    label: 'Probability %',
+                    data: [0, 0, 0, 0],
+                    // data : '{{prob}}',
+                    backgroundColor: ['lightpink', 'yellow', 'lightgreen', 'lightblue'],
+                    borderWidth: 1,
+                    boederColor: 'gray',
+                    hoverBorderWidth: 1,
+                    hoverBorderColor: 'gray',
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            stepSize: 5,
+                        }
+                    }
+                }
+            }
+        })
+    </script>
+    <script>
+        const recorder = document.getElementById('recorder');
+        const player = document.getElementById('player');
+        recorder.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            const url = URL.createObjectURL(file);
+            // Do something with the audio file.
+            player.src = url;
+
+        });
+    </script>
+</body>
+</html>
